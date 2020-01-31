@@ -13,7 +13,7 @@ function App() {
         <Route path='/' exact>
           <Users />
         </Route>
-        <Route path='/NewPlace' exact>
+        <Route path='/places/new' exact>
           <NewPlace />
         </Route>
         <Redirect to="/" />
