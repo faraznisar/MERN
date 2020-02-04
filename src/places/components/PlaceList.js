@@ -9,19 +9,20 @@ const PlaceList = props => {
         return <div className="place-list center">
             <Card>
                 <h2>No Places Found. Maybe Create One?</h2>
+                <button>Share Place</button>
             </Card>
         </div>
     }
     return <ul className="place-list">
-        {props.items.map(place => <PlaceItem
+        {props.items.map(place => (<PlaceItem
             key={place.id}
             id={place.id}
-            place={place.imageUrl}
+            image={place.imageUrl}
             title={place.title}
             description={place.description}
             address={place.address}
             creatorId={place.creator}
-            coordinates={place.location} />)}
+            coordinates={place.location} />))}
     </ul>
 }
 
