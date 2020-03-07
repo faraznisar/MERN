@@ -1,14 +1,18 @@
-import React from 'react';
+import React, { useState, useContext } from 'react';
 
 import Card from '../../shared/components/UIElements/Card'
 import Input from '../../shared/components/FormElements/Input'
 import Button from '../../shared/components/FormElements/Button'
-import { VALIDATOR_EMAIL, VALIDATOR_MINLENGTH } from '../../shared/util/validators'
+import { VALIDATOR_EMAIL, VALIDATOR_MINLENGTH, VALIDATOR_REQUIRE } from '../../shared/util/validators'
 import { useForm } from '../../shared/components/hooks/form-hook'
+import { AuthContext } from '../../shared/context/auth-context'
+import ErrorModal from '../../shared/components/UIElements/ErrorModal'
+import LoadingSpinner from '../../shared/components/UIElements/LoadingSpinner'
 import './Auth.css'
 
 const Auth = props => {
-    const [formState, inputHandler] = useForm({
+    const auth = useContext(AuthContext)
+    const [formState, inputHandler, setFormData] = useForm({
         email: {
             value: '',
             isValid: false
@@ -19,36 +23,115 @@ const Auth = props => {
         }
     }, false)
 
-    const authSubmitHandler = event => {
-        event.preventDefault()
-        console.log(formState.inputs)
-    }
-    return <Card className="authentication">
-        <h2>Login Required</h2>
-        <hr />
-        <form onSubmit={authSubmitHandler}>
-            <Input
-                id="email"
-                element="input"
-                type="email"
-                label="email"
-                validators={[VALIDATOR_EMAIL()]}
-                errorText="Please enter a Valid Email Address"
-                onInput={inputHandler}
-            />
-            <Input
-                id="password"
-                element="input"
-                type="password"
-                label="password"
-                validators={[VALIDATOR_MINLENGTH(5)]}
-                errorText="Please enter a Valid Password, at least 5 Characters"
-                onInput={inputHandler}
-            />
-            <Button type="submit" disabled={!formState.isValid}>LOGIN</Button>
+    const [isLoginMode, setIsLoginMode] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState(false)
 
-        </form>
-    </Card>
+    const authSubmitHandler = async event => {
+        event.preventDefault()
+
+        if (isLoginMode) {
+
+        } else {
+            try {
+                setIsLoading(true)
+                const response = await fetch('http://localhost:5000/api/users/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: formState.inputs.name.value,
+                        email: formState.inputs.email.value,
+                        password: formState.inputs.password.value
+                    })
+                })
+                const responseData = await response.json()
+                if (!response.ok) {
+                    throw new Error(responseData.message)
+                }
+                console.log(responseData)
+                setIsLoading(false)
+                auth.login()
+
+            } catch (err) {
+                console.log(err)
+                setIsLoading(false)
+                setError(err.message || 'Something went wrong, please try again.')
+            }
+        }
+        // console.log(formState.inputs)
+    }
+    const switchModeHandler = () => {
+        if (!isLoginMode) {
+            setFormData(
+                {
+                    ...formState.inputs,
+                    name: undefined
+                },
+                formState.inputs.email.isValid && formState.inputs.password.isValid
+            )
+        } else {
+            setFormData(
+                {
+                    ...formState.inputs,
+                    name: {
+                        value: '',
+                        isValid: false
+                    }
+                },
+                false)
+        }
+
+        setIsLoginMode(prevMode => !prevMode)
+
+    }
+
+    const errorHandler = () => {
+        setError(null)
+    }
+    return (
+        <React.Fragment>
+            <ErrorModal error={error} onClear={errorHandler} />
+            <Card className="authentication">
+                {isLoading && <LoadingSpinner asOverlay />}
+                <h2>Login Required</h2>
+                <hr />
+                <form onSubmit={authSubmitHandler}>
+                    {!isLoginMode && (
+                        <Input
+                            id="name"
+                            element="input"
+                            type="name"
+                            label="Your Name"
+                            validators={[VALIDATOR_REQUIRE()]}
+                            errorText="Please enter a Name"
+                            onInput={inputHandler}
+                        />)}
+                    <Input
+                        id="email"
+                        element="input"
+                        type="email"
+                        label="email"
+                        validators={[VALIDATOR_EMAIL()]}
+                        errorText="Please enter a Valid Email Address"
+                        onInput={inputHandler}
+                    />
+                    <Input
+                        id="password"
+                        element="input"
+                        type="password"
+                        label="password"
+                        validators={[VALIDATOR_MINLENGTH(7)]}
+                        errorText="Please enter a Valid Password, at least 7 Characters"
+                        onInput={inputHandler}
+                    />
+                    <Button type="submit" disabled={!formState.isValid}>{isLoginMode ? 'LOGIN' : "SIGNUP"}</Button>
+
+                </form>
+                <Button inverse onClick={switchModeHandler}>SWITCH TO {isLoginMode ? 'SIGNUP' : 'LOGIN'}</Button>
+            </Card>
+        </React.Fragment>)
 }
 
 export default Auth
