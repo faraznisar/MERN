@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom'
 import './UserItem.css'
 
 const UserItem = props => {
-    console.log(`${props.id}`)
+    // console.log(`${props.id}`)
 
     return (
         <li className="user-item">
